@@ -1,8 +1,17 @@
+from PyQt6 import QtCore, QtGui, QtWidgets
+from VisualizationSort import *
+import requests, json, timeit
+from SortingAlgorithm import *
+from PyQt6.QtGui import QRegularExpressionValidator
+from PyQt6.QtCore import QRegularExpression
+
+
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from VisualizationSort import *
 import requests, json, timeit
 from SortingAlgorithm import *
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -10,19 +19,22 @@ class Ui_MainWindow(object):
         MainWindow.resize(1920, 1080)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        
+        # Các nút chức năng
         self.buttonDeleteRow = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonDeleteRow.setGeometry(QtCore.QRect(10, 550, 131, 28))
         self.buttonDeleteRow.setObjectName("buttonDeleteRow")
         self.buttonDeleteAll = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonDeleteAll.setGeometry(QtCore.QRect(170, 550, 111, 28))
         self.buttonDeleteAll.setObjectName("buttonDeleteAll")
-        #
         self.buttonVisualizationSort = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonVisualizationSort.setGeometry(QtCore.QRect(330, 550, 93, 28))
         self.buttonVisualizationSort.setObjectName("buttonVisualizationSort")
         self.buttonSort = QtWidgets.QPushButton(parent=self.centralwidget)
         self.buttonSort.setGeometry(QtCore.QRect(480, 550, 93, 28))
         self.buttonSort.setObjectName("buttonSort")
+        
+        # Các ComboBox lựa chọn
         self.cbTieuChi = QtWidgets.QComboBox(parent=self.centralwidget)
         self.cbTieuChi.setGeometry(QtCore.QRect(20, 310, 101, 22))
         self.cbTieuChi.setObjectName("cbTieuChi")
@@ -34,6 +46,8 @@ class Ui_MainWindow(object):
         self.cbLoaiSapXep.setObjectName("cbLoaiSapXep")
         self.cbLoaiSapXep.addItem("")
         self.cbLoaiSapXep.addItem("")
+        
+        # RadioButton nhập dữ liệu
         self.rbTrucTiep = QtWidgets.QRadioButton(parent=self.centralwidget)
         self.rbTrucTiep.setGeometry(QtCore.QRect(60, 50, 151, 20))
         self.rbTrucTiep.setObjectName("rbTrucTiep")
@@ -43,6 +57,8 @@ class Ui_MainWindow(object):
         self.rbNhapTay = QtWidgets.QRadioButton(parent=self.centralwidget)
         self.rbNhapTay.setGeometry(QtCore.QRect(410, 50, 95, 20))
         self.rbNhapTay.setObjectName("rbNhapTay")
+        
+        # Các trường nhập liệu
         self.label = QtWidgets.QLabel(parent=self.centralwidget)
         self.label.setGeometry(QtCore.QRect(330, 100, 55, 16))
         self.label.setObjectName("label")
@@ -64,44 +80,52 @@ class Ui_MainWindow(object):
         self.editDoAm.setGeometry(QtCore.QRect(420, 180, 113, 22))
         self.editDoAm.setReadOnly(True)
         self.editDoAm.setObjectName("editDoAm")
+        
+        # Trường nhập thành phố
         self.inputThanhPho = QtWidgets.QLineEdit(parent=self.centralwidget)
         self.inputThanhPho.setGeometry(QtCore.QRect(20, 90, 113, 22))
         self.inputThanhPho.setObjectName("inputThanhPho")
+        
+        # Các nút thêm dữ liệu
         self.pushButton = QtWidgets.QPushButton(parent=self.centralwidget)
         self.pushButton.setGeometry(QtCore.QRect(150, 90, 111, 28))
         self.pushButton.setObjectName("pushButton")
         self.pushButton_2 = QtWidgets.QPushButton(parent=self.centralwidget)
         self.pushButton_2.setGeometry(QtCore.QRect(270, 230, 141, 28))
         self.pushButton_2.setObjectName("pushButton_2")
+        
+        # Bảng hiển thị dữ liệu
         self.tableWidget = QtWidgets.QTableWidget(parent=self.centralwidget)
         self.tableWidget.setGeometry(QtCore.QRect(180, 300, 440, 201))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setHorizontalHeaderLabels(["Thành Phố", "Nhiệt Độ (°C)", "Tốc Độ Gió (m/s)", "Độ Ẩm (%)"])
         MainWindow.setCentralWidget(self.centralwidget)
+        
+        # Menu và trạng thái
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar) 
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        # Connect rbNhapTay toggle signal to a method
+        MainWindow.setStatusBar(self.statusbar)
+        
+        # Kết nối các sự kiện
         self.rbNhapTay.toggled.connect(self.enable_manual_input)
-        # Connect pushButton click to fetch weather data
         self.pushButton.clicked.connect(self.fetch_weather_data)
-        # Connect pushButton_2 click to show data on table
         self.pushButton_2.clicked.connect(self.show_data_on_table)
-        #
         self.buttonDeleteRow.clicked.connect(self.delete_selected_row)
         self.buttonDeleteAll.clicked.connect(self.delete_all_rows)
         self.buttonSort.clicked.connect(self.sort_table)
         self.buttonVisualizationSort.clicked.connect(self.visualization_sort_window)
-        #
-        self.sortVisualizationWindow = None  # Reference for sorting visualization window
-      
+        
+        # Cửa sổ mô phỏng sắp xếp
+        self.sortVisualizationWindow = None
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -122,16 +146,28 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "Độ ẩm"))
         self.pushButton.setText(_translate("MainWindow", "Nhập Thành Phố"))
         self.pushButton_2.setText(_translate("MainWindow", "Hiện Kết Quả Lên Bảng"))
+    
     def enable_manual_input(self, checked):
         """Enable or disable manual input based on rbNhapTay state."""
-        if checked:  # If rbNhapTay is selected
+        if checked:  # Nếu chọn nhập tay
             self.editNhietDo.setReadOnly(False)
             self.editTocDoGio.setReadOnly(False)
             self.editDoAm.setReadOnly(False)
-        else:  # Reset to read-only if rbNhapTay is deselected
+
+            # Áp dụng ràng buộc giá trị
+            self.editNhietDo.setValidator(QtGui.QIntValidator(-50, 50, self.centralwidget))  # 0-50°C
+            self.editTocDoGio.setValidator(QtGui.QIntValidator(0, 50, self.centralwidget))  # 0-50 m/s
+            self.editDoAm.setValidator(QtGui.QIntValidator(0, 100, self.centralwidget))  # 0-100%
+        else:  # Không cho phép nhập tay
             self.editNhietDo.setReadOnly(True)
             self.editTocDoGio.setReadOnly(True)
             self.editDoAm.setReadOnly(True)
+
+            # Bỏ ràng buộc
+            self.editNhietDo.setValidator(None)
+            self.editTocDoGio.setValidator(None)    
+            self.editDoAm.setValidator(None)
+
             
 
     def fetch_weather_data(self):
@@ -326,13 +362,13 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
             return
 
-        # End the timer
+        # End the timer 
         end_time = timeit.default_timer()
 
         # Calculate the elapsed time
         elapsed_time = end_time - start_time
 
-        # Display the sorted data in the table
+        # Display the sorted data in the table  
         self.tableWidget.setRowCount(0)
         for row in sorted_rows:
             self.add_row_to_table(row[0], f"{row[1]:.2f} °C", f"{row[2]} m/s", f"{row[3]} %")
