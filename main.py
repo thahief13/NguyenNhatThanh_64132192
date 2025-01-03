@@ -4,15 +4,6 @@ import requests, json, timeit
 from SortingAlgorithm import *
 from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtCore import QRegularExpression
-
-
-
-from PyQt6 import QtCore, QtGui, QtWidgets
-from VisualizationSort import *
-import requests, json, timeit
-from SortingAlgorithm import *
-
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -46,7 +37,7 @@ class Ui_MainWindow(object):
         self.cbLoaiSapXep.setObjectName("cbLoaiSapXep")
         self.cbLoaiSapXep.addItem("")
         self.cbLoaiSapXep.addItem("")
-        
+
         # RadioButton nhập dữ liệu
         self.rbTrucTiep = QtWidgets.QRadioButton(parent=self.centralwidget)
         self.rbTrucTiep.setGeometry(QtCore.QRect(60, 50, 151, 20))
@@ -57,7 +48,6 @@ class Ui_MainWindow(object):
         self.rbNhapTay = QtWidgets.QRadioButton(parent=self.centralwidget)
         self.rbNhapTay.setGeometry(QtCore.QRect(410, 50, 95, 20))
         self.rbNhapTay.setObjectName("rbNhapTay")
-        
         # Các trường nhập liệu
         self.label = QtWidgets.QLabel(parent=self.centralwidget)
         self.label.setGeometry(QtCore.QRect(330, 100, 55, 16))
@@ -156,7 +146,7 @@ class Ui_MainWindow(object):
 
             # Áp dụng ràng buộc giá trị
             self.editNhietDo.setValidator(QtGui.QIntValidator(-50, 50, self.centralwidget))  # 0-50°C
-            self.editTocDoGio.setValidator(QtGui.QIntValidator(0, 50, self.centralwidget))  # 0-50 m/s
+            self.editTocDoGio.setValidator(QtGui.QIntValidator(0, 100, self.centralwidget))  # 0-100 m/s
             self.editDoAm.setValidator(QtGui.QIntValidator(0, 100, self.centralwidget))  # 0-100%
         else:  # Không cho phép nhập tay
             self.editNhietDo.setReadOnly(True)
@@ -274,7 +264,7 @@ class Ui_MainWindow(object):
         self.tableWidget.setItem(row_position, 3, QtWidgets.QTableWidgetItem(humidity))
     def visualization_sort_window(self):
         criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
-        sort_method = self.cbLoaiSapXep.currentText()  # "Bubble Sort" or "Merge Sort"
+        sort_method = self.cbLoaiSapXep.currentText()  # "Insertion Sort" or "Heap Sort"
 
         # Convert table data to a list of tuples for sorting
         rows = []
