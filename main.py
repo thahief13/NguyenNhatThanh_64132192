@@ -4,10 +4,98 @@ import requests, json, timeit
 from SortingAlgorithm import *
 from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtCore import QRegularExpression
+
+class InputData:
+    def __init__(self, rbTrucTiep, rbFile, rbNhapTay, inputThanhPho, editNhietDo, editTocDoGio, editDoAm):
+        self.rbTrucTiep = rbTrucTiep
+        self.rbFile = rbFile
+        self.rbNhapTay = rbNhapTay
+        self.inputThanhPho = inputThanhPho
+        self.editNhietDo = editNhietDo
+        self.editTocDoGio = editTocDoGio
+        self.editDoAm = editDoAm
+
+    def enable_manual_input(self, checked):
+        """Enable or disable manual input based on rbNhapTay state."""
+        if checked:  # If rbNhapTay is selected
+            self.editNhietDo.setReadOnly(False)
+            self.editTocDoGio.setReadOnly(False)
+            self.editDoAm.setReadOnly(False)
+        else:  # Reset to read-only if rbNhapTay is deselected
+            self.editNhietDo.setReadOnly(True)
+            self.editTocDoGio.setReadOnly(True)
+            self.editDoAm.setReadOnly(True)
+    def fetch_data(self):
+        """Lấy dữ liệu theo phương thức người dùng chọn"""
+        if self.rbTrucTiep.isChecked():
+            return self.fetch_data_from_api()
+        elif self.rbFile.isChecked():
+            return self.fetch_data_from_file()
+        elif self.rbNhapTay.isChecked():
+            return self.fetch_data_from_manual_input() 
+        else:
+            return None
+
+    def fetch_data_from_api(self):
+        """Lấy dữ liệu từ API"""
+        city = self.inputThanhPho.text()
+        if not city:
+            QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập tên thành phố!")
+            return None
+
+        API_KEY = "2e4561df4a97fd29e34e7798bc505f09"
+        BASE_URL = "http://api.openweathermap.org/data/2.5/weather?"
+        try:
+            url = BASE_URL + f"appid={API_KEY}&q={city}"
+            response = requests.get(url).json()
+
+            if response.get("cod") != 200:
+                QtWidgets.QMessageBox.critical(None, "Error", f"Không tìm thấy thành phố: {city}")
+                return None
+
+            temp_kelvin = response["main"]["temp"]
+            humidity = response["main"]["humidity"]
+            wind_speed = response["wind"]["speed"]
+            temp_celsius = temp_kelvin - 273.15
+            return {"city": city, "temp": f"{temp_celsius:.2f} °C", "wind_speed": f"{wind_speed} m/s", "humidity": f"{humidity} %"}
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(None, "Error", f"Đã xảy ra lỗi: {e}")
+            return None
+
+    def fetch_data_from_file(self):
+        """Lấy dữ liệu từ file JSON"""
+        try:
+            with open("thanhpho.json", "r", encoding="utf-8") as file:
+                data = json.load(file)
+                return data  # trả về toàn bộ dữ liệu trong file
+        except FileNotFoundError:
+            QtWidgets.QMessageBox.warning(None, "Error", "Không tìm thấy file dữ liệu!")
+        except json.JSONDecodeError:
+            QtWidgets.QMessageBox.warning(None, "Error", "Lỗi định dạng file JSON!")
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(None, "Error", f"Đã xảy ra lỗi khi đọc file: {e}")
+        return None
+    
+        
+    def fetch_data_from_manual_input(self):
+        
+        """Lấy dữ liệu từ nhập tay"""
+        temp = self.editNhietDo.text()
+        wind_speed = self.editTocDoGio.text()
+        humidity = self.editDoAm.text()
+
+        if not temp or not wind_speed or not humidity:
+            QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập đầy đủ dữ liệu!")
+            return None
+        city = self.inputThanhPho.text()
+        return {"city": city, "temp": temp, "wind_speed": wind_speed, "humidity": humidity}
+    
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1920, 1080)
+        # MainWindow.resize(1920, 1080)
+        MainWindow.resize(1600, 900)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         
@@ -37,7 +125,11 @@ class Ui_MainWindow(object):
         self.cbLoaiSapXep.setObjectName("cbLoaiSapXep")
         self.cbLoaiSapXep.addItem("")
         self.cbLoaiSapXep.addItem("")
-
+        self.cbThuTuSapXep = QtWidgets.QComboBox(parent=self.centralwidget)
+        self.cbThuTuSapXep.setGeometry(QtCore.QRect(20, 410, 101, 22))
+        self.cbThuTuSapXep.setObjectName("cbThuTuSapXep")
+        self.cbThuTuSapXep.addItem("")
+        self.cbThuTuSapXep.addItem("")
         # RadioButton nhập dữ liệu
         self.rbTrucTiep = QtWidgets.QRadioButton(parent=self.centralwidget)
         self.rbTrucTiep.setGeometry(QtCore.QRect(60, 50, 151, 20))
@@ -91,7 +183,13 @@ class Ui_MainWindow(object):
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setHorizontalHeaderLabels(["Thành Phố", "Nhiệt Độ (°C)", "Tốc Độ Gió (m/s)", "Độ Ẩm (%)"])
         MainWindow.setCentralWidget(self.centralwidget)
-        
+        # Thêm vùng hiển thị mô phỏng
+        self.visualizationArea = QtWidgets.QFrame(parent=self.centralwidget)
+        self.visualizationArea.setGeometry(QtCore.QRect(650, 50, 850, 750))  # Điều chỉnh kích thước phù hợp
+        self.visualizationArea.setFrameShape(QtWidgets.QFrame.Shape.Box)
+        self.visualizationArea.setObjectName("visualizationArea")
+        # Thêm layout vào visualizationArea
+        self.visualizationArea.setLayout(QtWidgets.QVBoxLayout())
         # Menu và trạng thái
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
@@ -111,7 +209,7 @@ class Ui_MainWindow(object):
         self.buttonVisualizationSort.clicked.connect(self.visualization_sort_window)
         
         # Cửa sổ mô phỏng sắp xếp
-        self.sortVisualizationWindow = None
+        # self.sortVisualizationWindow = None
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -128,6 +226,8 @@ class Ui_MainWindow(object):
         self.cbTieuChi.setItemText(2, _translate("MainWindow", "Độ ẩm"))
         self.cbLoaiSapXep.setItemText(0, _translate("MainWindow", "Insertion Sort"))
         self.cbLoaiSapXep.setItemText(1, _translate("MainWindow", "Heap Sort"))
+        self.cbThuTuSapXep.setItemText(0, _translate("MainWindow", "Tăng dần"))
+        self.cbThuTuSapXep.setItemText(1, _translate("MainWindow", "Giảm dần"))
         self.rbTrucTiep.setText(_translate("MainWindow", "Lấy dữ liệu trực tiếp"))
         self.rbFile.setText(_translate("MainWindow", "Lấy dữ liệu từ file có sẵn"))
         self.rbNhapTay.setText(_translate("MainWindow", "Nhập tay"))
@@ -146,8 +246,8 @@ class Ui_MainWindow(object):
 
             # Áp dụng ràng buộc giá trị
             self.editNhietDo.setValidator(QtGui.QIntValidator(-50, 50, self.centralwidget))  # 0-50°C
-            self.editTocDoGio.setValidator(QtGui.QIntValidator(0, 100, self.centralwidget))  # 0-100 m/s
-            self.editDoAm.setValidator(QtGui.QIntValidator(0, 100, self.centralwidget))  # 0-100%
+            self.editTocDoGio.setValidator(QtGui.QIntValidator(0, 50, self.centralwidget))  # 0-100 m/s
+            self.editDoAm.setValidator(QtGui.QIntValidator(0, 50, self.centralwidget))  # 0-100%
         else:  # Không cho phép nhập tay
             self.editNhietDo.setReadOnly(True)
             self.editTocDoGio.setReadOnly(True)
@@ -197,7 +297,15 @@ class Ui_MainWindow(object):
             temp = self.editNhietDo.text()
             wind_speed = self.editTocDoGio.text()
             humidity = self.editDoAm.text()
-
+            def check_int(string):
+                try:
+                    int(string)
+                    return False
+                except:
+                    return True
+            if not check_int(city):
+                QtWidgets.QMessageBox.warning(None, "Warning", "Nhập sai thông tin thành phố!")
+                return
             # Check if the data is available
             if not temp or not wind_speed or not humidity:
                 QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng lấy dữ liệu trước khi hiển thị lên bảng!")
@@ -245,12 +353,21 @@ class Ui_MainWindow(object):
             temp = self.editNhietDo.text()
             wind_speed = self.editTocDoGio.text()
             humidity = self.editDoAm.text()
-
+            def check_int(string):
+                try:
+                    int(string)
+                    return False
+                except:
+                    return True
+            if not check_int(city):
+                QtWidgets.QMessageBox.warning(None, "Warning", "Nhập sai thông tin thành phố!")
+                return
             # Check if the user entered all the required data
             if not temp or not wind_speed or not humidity:
                 QtWidgets.QMessageBox.warning(None, "Warning", "Vui lòng nhập đầy đủ dữ liệu!")
                 return
-            self.add_row_to_table(city, temp, wind_speed, humidity)
+            #self.add_row_to_table(city, temp, wind_speed, humidity)
+            self.add_row_to_table(city, f"{temp} °C", f" {wind_speed} m/s", f"{humidity} %")
 
     def add_row_to_table(self, city, temp, wind_speed, humidity):
         """Add a new row to the table."""
@@ -262,59 +379,24 @@ class Ui_MainWindow(object):
         self.tableWidget.setItem(row_position, 1, QtWidgets.QTableWidgetItem(temp))
         self.tableWidget.setItem(row_position, 2, QtWidgets.QTableWidgetItem(wind_speed))
         self.tableWidget.setItem(row_position, 3, QtWidgets.QTableWidgetItem(humidity))
-    def visualization_sort_window(self):
-        criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
-        sort_method = self.cbLoaiSapXep.currentText()  # "Insertion Sort" or "Heap Sort"
 
-        # Convert table data to a list of tuples for sorting
-        rows = []
-        for row in range(self.tableWidget.rowCount()):
-            city = self.tableWidget.item(row, 0).text()
-            temp = float(self.tableWidget.item(row, 1).text().split()[0])  # Remove the unit and convert to float
-            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])  # Remove unit and convert to float
-            humidity = float(self.tableWidget.item(row, 3).text().split()[0])  # Remove unit and convert to float
-            rows.append([city, temp, wind_speed, humidity])
-
-        # Choose the sorting key based on the selected criteria
-        if criteria == "Nhiệt độ":
-            key_index = 1  # Sort by temperature
-        elif criteria == "Tốc độ gió":
-            key_index = 2  # Sort by wind speed
-        elif criteria == "Độ ẩm":
-            key_index = 3  # Sort by humidity
-        else:
-            QtWidgets.QMessageBox.warning(None, "Warning", "Tiêu chí không hợp lệ!")
-            return
-
-        # Sort the data based on the chosen method
-        try:
-            if sort_method == "Insertion Sort":
-                # Visualize sorting if Bubble Sort is selected
-                values = [row[key_index] for row in rows]  # Extract column values to sort
-                self.visualization_widget = SortVisualizationWidget(values, sort_type="insertion")
-                self.visualization_widget.show()
-
-            elif sort_method == "Heap Sort":
-                # Visualize sorting if Merge Sort is selected
-                values = [row[key_index] for row in rows]  # Extract column values to sort
-                self.visualization_widget = SortVisualizationWidget(values, sort_type="heap")
-                self.visualization_widget.show()
-
-            else:
-                QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
-                return
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
-            return
-
-
-        # Display the sorted data in the table
+    #     # Display the sorted data in the table
         
     def sort_table(self):
         """Sort the data in the table according to the selected criteria."""
         # Get the selected sorting criterion and method
         criteria = self.cbTieuChi.currentText()  # "Nhiệt độ", "Tốc độ gió", "Độ ẩm"
         sort_method = self.cbLoaiSapXep.currentText()  # "Bubble Sort" or "Merge Sort"
+        sort_order = self.cbThuTuSapXep.currentText()  # "Tăng dần" or "Giảm dần"
+
+        # Determine the order for sorting
+        if sort_order == "Tăng dần":
+            order = 'asc'
+        elif sort_order == "Giảm dần":
+            order = 'desc'
+        else:
+            QtWidgets.QMessageBox.warning(None, "Warning", "Phương thức sắp xếp không hợp lệ!")
+            return
 
         # Convert table data to a list of tuples for sorting
         rows = []
@@ -352,19 +434,24 @@ class Ui_MainWindow(object):
             QtWidgets.QMessageBox.warning(None, "Error", f"Đã có lỗi xảy ra: {str(e)}")
             return
 
-        # End the timer 
+        # End the timer
         end_time = timeit.default_timer()
 
         # Calculate the elapsed time
         elapsed_time = end_time - start_time
 
-        # Display the sorted data in the table  
+        # If the order is 'desc', reverse the sorted list
+        if order == 'desc':
+            sorted_rows.reverse()
+
+        # Display the sorted data in the table
         self.tableWidget.setRowCount(0)
         for row in sorted_rows:
             self.add_row_to_table(row[0], f"{row[1]:.2f} °C", f"{row[2]} m/s", f"{row[3]} %")
 
         # Show a message box with the sorting time
-        QtWidgets.QMessageBox.information(None, "Sắp xếp hoàn tất", f"Thời gian sắp xếp: {elapsed_time:.6f} giây") 
+        QtWidgets.QMessageBox.information(None, "Sắp xếp hoàn tất", f"Thời gian sắp xếp: {elapsed_time:.6f} giây")
+
                 
 
     def delete_selected_row(self):
@@ -382,6 +469,50 @@ class Ui_MainWindow(object):
             self.tableWidget.setRowCount(0)  # Set row count to 0, which removes all rows
         else:
             QtWidgets.QMessageBox.warning(None, "Warning", "Bảng không có dữ liệu để xóa!")
+
+    def visualization_sort_window(self):
+        criteria = self.cbTieuChi.currentText()
+        sort_method = self.cbLoaiSapXep.currentText()
+
+        # Chuyển dữ liệu từ bảng sang danh sách
+        rows = []
+        for row in range(self.tableWidget.rowCount()):
+            city = self.tableWidget.item(row, 0).text()
+            temp = float(self.tableWidget.item(row, 1).text().split()[0])
+            wind_speed = float(self.tableWidget.item(row, 2).text().split()[0])
+            humidity = float(self.tableWidget.item(row, 3).text().split()[0])
+            rows.append([city, temp, wind_speed, humidity])
+
+        if criteria == "Nhiệt độ":
+            key_index = 1
+        elif criteria == "Tốc độ gió":
+            key_index = 2
+        elif criteria == "Độ ẩm":
+            key_index = 3
+        else:
+            QtWidgets.QMessageBox.warning(None, "Warning", "Tiêu chí không hợp lệ!")
+            return
+        # Xóa widget cũ trong visualizationArea
+        for i in reversed(range(self.visualizationArea.layout().count())):
+            widget = self.visualizationArea.layout().itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+
+        # Chọn loại sắp xếp
+        sort_type = "insertion" if sort_method == "Insertion Sort" else "heap"
+
+        # Tạo widget mô phỏng mới
+        visualization_widget = SortVisualizationWidget(
+            data=[row[key_index] for row in rows], 
+            sort_type=sort_type, 
+            parent=self.visualizationArea
+        )
+
+        # Thêm widget mới vào layout hiện tại
+        self.visualizationArea.layout().addWidget(visualization_widget)
+        visualization_widget.show()
+
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

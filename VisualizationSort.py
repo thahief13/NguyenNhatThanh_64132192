@@ -10,41 +10,42 @@ class SortVisualizationWidget(QtWidgets.QWidget):
         self.animation_speed = 1.6  # Default animation speed
         self.ascending = True  # Default sorting order
         self.setWindowTitle("Mô Phỏng Thuật Toán Sắp Xếp")
-        self.resize(1000, 600)
+        self.resize(850, 650)
 
         # Scene và View để vẽ
         self.scene = QtWidgets.QGraphicsScene(self)
         self.view = QtWidgets.QGraphicsView(self.scene, self)
-        self.view.setGeometry(10, 10, 800, 400)
+        self.view.setGeometry(10, 10, 600, 600)
 
         # Thông tin hoạt động
         self.activity_label = QtWidgets.QLabel(self)
-        self.activity_label.setGeometry(820, 10, 160, 300)
+        self.activity_label.setGeometry(650, 10, 160, 300)
         self.activity_label.setWordWrap(True)
         self.activity_label.setText("Cách hoạt động của thuật toán sẽ được hiển thị tại đây.")
 
         # Nút bắt đầu sắp xếp
         self.start_button = QtWidgets.QPushButton("Bắt Đầu Sắp Xếp", self)
-        self.start_button.setGeometry(820, 320, 160, 30)
+        self.start_button.setGeometry(650, 320, 160, 30)
         self.start_button.clicked.connect(self.start_sorting)
 
         # Slider để điều chỉnh tốc độ
         self.speed_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal, self)
-        self.speed_slider.setGeometry(820, 360, 160, 30)
+        self.speed_slider.setGeometry(650, 360, 160, 30)
         self.speed_slider.setRange(1, 10)
         self.speed_slider.setValue(6)  # Default speed (middle)
         self.speed_slider.valueChanged.connect(self.update_speed)
 
         # ComboBox để đổi thứ tự sắp xếp
         self.order_combobox = QtWidgets.QComboBox(self)
-        self.order_combobox.setGeometry(820, 440, 160, 30)
+        self.order_combobox.setGeometry(650, 440, 160, 30)
         self.order_combobox.addItem("Tăng dần")
         self.order_combobox.addItem("Giảm dần")
         self.order_combobox.currentIndexChanged.connect(self.toggle_order)
 
-        # Label hiển thị thời gian
+        # # Label hiển thị thời gian
+        
         self.time_label = QtWidgets.QLabel("Thời gian: 0.0s", self)
-        self.time_label.setGeometry(820, 480, 160, 30)
+        self.time_label.setGeometry(650, 480, 160, 30)
 
     def update_speed(self):
         """Cập nhật tốc độ sắp xếp khi thay đổi slider."""
@@ -59,7 +60,7 @@ class SortVisualizationWidget(QtWidgets.QWidget):
         self.scene.clear()
         levels = len(data).bit_length()  # Số tầng của cây
         x_offset = self.view.width() // 2  # Tâm ngang
-        y_step = 50  # Khoảng cách dọc giữa các tầng
+        y_step = 30  # Khoảng cách dọc giữa các tầng
 
         def draw_node(value, x, y, is_highlighted=False):
             """Vẽ một nút trong cây."""
@@ -70,6 +71,7 @@ class SortVisualizationWidget(QtWidgets.QWidget):
             text = QtWidgets.QGraphicsTextItem(str(value))
             text.setPos(x - 10, y - 10)
             self.scene.addItem(text)
+            # print("yuyuu")
 
         def draw_edges(x1, y1, x2, y2):
             """Vẽ các đường nối."""
@@ -92,6 +94,7 @@ class SortVisualizationWidget(QtWidgets.QWidget):
         recurse(0, x_offset, 50, x_offset // 2)
 
     def draw_bar_chart(self, data, highlight_index=None):
+        # print("00000000000000", data)
         """Vẽ biểu đồ cột đại diện cho dữ liệu."""
         self.scene.clear()
         bar_width = 20
@@ -104,6 +107,7 @@ class SortVisualizationWidget(QtWidgets.QWidget):
 
         for i, value in enumerate(data):
             bar_height = (value / max_value) * max_height
+            # print(bar_height)
             color = QtGui.QColor("blue") if i == highlight_index else QtGui.QColor("green")
             rect = QtWidgets.QGraphicsRectItem(x_offset + i * (bar_width + spacing), y_offset + max_height - bar_height, bar_width, bar_height)
             rect.setBrush(color)
@@ -177,9 +181,13 @@ class SortVisualizationWidget(QtWidgets.QWidget):
 
     def start_sorting(self):
         """Bắt đầu sắp xếp."""
+        # print("44444444444444444")
+        
+        # self.activity_label("")
         if self.sort_type == "heap":
             self.activity_label.setText("Đang thực hiện Heap Sort...")  # Cập nhật mô tả
             self.heap_sort_visualization(self.data)
+
         elif self.sort_type == "insertion":
             self.activity_label.setText("Đang thực hiện Insertion Sort...")  # Cập nhật mô tả
             self.insertion_sort_visualization(self.data)
